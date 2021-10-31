@@ -23,6 +23,7 @@ class ShoesSpider(scrapy.Spider):
 
         for prod in product:
             pr_item = ShoesSpiderItem()
+            category_id = 'shoess'
             price = prod.css('span.price-block__final-price::text').get()
             title = prod.css('h1.same-part-kt__header > span::text').get()
             descr = prod.css('div.j-description > p::text').get()
@@ -34,6 +35,7 @@ class ShoesSpider(scrapy.Spider):
             else:
                 price = 0
 
+            pr_item['category'] = category_id
             pr_item['title'] = title
             pr_item['price'] = price
             pr_item['description'] = descr
