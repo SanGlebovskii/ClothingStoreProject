@@ -2,6 +2,8 @@ import scrapy
 
 from clothspider.clothspider.items import ShoesSpiderItem
 
+from mainapp.models import Category
+
 
 class ShoesSpider(scrapy.Spider):
     name = 'shoes'
@@ -23,7 +25,7 @@ class ShoesSpider(scrapy.Spider):
 
         for prod in product:
             pr_item = ShoesSpiderItem()
-            category_id = 'shoess'
+            category_id = "Shoes.category"
             price = prod.css('span.price-block__final-price::text').get()
             title = prod.css('h1.same-part-kt__header > span::text').get()
             descr = prod.css('div.j-description > p::text').get()

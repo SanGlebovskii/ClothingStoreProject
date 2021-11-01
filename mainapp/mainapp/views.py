@@ -1,14 +1,15 @@
 from django.db import transaction
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.views.generic import DetailView, View
-
-from .models import Shoes, Outerwear, Sweatshirts, Jeans, Costumes,Category, LatestProducts, Customer, Cart, CartProduct
+from django.contrib.auth import get_user_model
+from .models import Shoes, Outerwear, Sweatshirts, Jeans, Costumes, Category, LatestProducts, Customer, Cart, CartProduct, Review
 from .mixins import CategoryDetailMixin, CartMixin
-from .forms import OrderForm
+from .forms import OrderForm, ReviewForm
 from .utils import recalc_cart
+User = get_user_model()
 
 
 class BaseView(CartMixin, View):
@@ -50,6 +51,23 @@ class ProductDetailView(CartMixin, CategoryDetailMixin, DetailView):
         context['ct_model'] = self.model._meta.model_name
         context['cart'] = self.cart
         return context
+
+    def review_product(self, request, *args, **kwargs):
+        ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('slug')
+        content_type = ContentType.objects.get(model=ct_model)
+        product = content_type.model_class().objects.get(slug=product_slug)
+
+        if request.method == "POST":
+            form = ReviewForm(request.POST)
+            if form.is_valid():
+                cf = form.cleaned_data
+                author = User
+                Review.objects.create(product=ct_model, author=author, text=cf['text'], rate=cf['rate'])
+            return redirect('product_detail', slug=product_slug)
+        else:
+            form = ReviewForm()
+
+        return render(request, 'category_detail.html', {'product': product, 'form': form})
 
 
 class CategoryDetailView(CartMixin, CategoryDetailMixin, DetailView):

@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -266,3 +267,13 @@ class Order(models.Model):
 
     def __str__(self):
         return str(self.id)
+
+
+class Review(models.Model):
+    author = models.CharField(max_length=50)
+    rate = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    text = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created',)

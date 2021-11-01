@@ -1,6 +1,8 @@
 from django import forms
 
-from .models import Order
+from .models import Order, Review
+
+REVIEW_CHOICES = [(1, 1), (2, 2), (3, 3), (4, 4), (5, 5)]
 
 
 class OrderForm(forms.ModelForm):
@@ -16,3 +18,13 @@ class OrderForm(forms.ModelForm):
         fields = (
             'first_name', 'last_name', 'phone', 'address', 'buying_type', 'order_date', 'comment'
         )
+
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ('rate', 'text')
+        widgets = {
+            'text': forms.Textarea(attrs={'class': 'form-control shadow px-2', 'rows': 6}),
+            'rate': forms.RadioSelect(choices=REVIEW_CHOICES)
+        }

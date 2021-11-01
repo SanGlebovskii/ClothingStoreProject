@@ -1,21 +1,34 @@
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 # Create your views here.
 from django.urls import reverse_lazy
 from django.views.generic import CreateView
 
-from .mixins import DataMixin
+from .forms import RegistrationForm
 
 
-class RegisterUser(DataMixin, CreateView):
-    form_class = UserCreationForm
-    template_name = 'register.html'
-    success_url = reverse_lazy('login')
+def register(request):
+    if not request.user.is_authenticated:
+        if request.POST:
+            form = RegistrationForm(request.POST or None)
+            if form.is_valid():
+                form.save()
+                username = form.cleaned_data.get('username')
+                my_password1 = form.cleaned_data.get('password1')
 
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title="Регистрация")
-        return dict(list(context.items()) + list(c_def.items()))
+                user = authenticate(username=username, password=my_password1)
+                if user and user.is_active:
+                    login(request, user)
+                    return redirect('/')
+                else:
+                    form.add_error(None, 'Unknown or disabled account')
+                    return render(request, 'register.html', {'form': form})
 
-
+            else:
+                return render(request, 'register.html', {'form': form})
+        else:
+            return render(request, 'register.html', {'form': RegistrationForm()})
+    else:
+        return redirect('/')
