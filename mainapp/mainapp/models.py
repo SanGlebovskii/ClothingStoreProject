@@ -216,6 +216,7 @@ class Customer(models.Model):
     phone = models.CharField(max_length=20, verbose_name='Номер телефона', null=True, blank=True)
     address = models.CharField(max_length=255, verbose_name='Адрес', null=True, blank=True)
     orders = models.ManyToManyField('Order', verbose_name='Заказы покупателя', related_name='related_order')
+    reviews = models.ManyToManyField('Review', verbose_name='Отзывы покупателя', related_name='related_reviews')
 
     def __str__(self):
         return "Покупатель: {} {}".format(self.user.first_name, self.user.last_name)
@@ -270,7 +271,8 @@ class Order(models.Model):
 
 
 class Review(models.Model):
-    author = models.CharField(max_length=50)
+
+    author = models.ForeignKey('Customer', null=True, verbose_name='Автор', on_delete=models.CASCADE)
     rate = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     text = models.TextField()
     created = models.DateTimeField(auto_now_add=True)

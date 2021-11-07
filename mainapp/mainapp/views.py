@@ -1,14 +1,17 @@
+from django.core.mail import send_mail, BadHeaderError
 from django.db import transaction
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.views.generic import DetailView, View
 from django.contrib.auth import get_user_model
-from .models import Shoes, Outerwear, Sweatshirts, Jeans, Costumes, Category, LatestProducts, Customer, Cart, CartProduct, Review
+from .models import Shoes, Outerwear, Sweatshirts, Jeans, Costumes, Category, LatestProducts, Customer, Cart, \
+    CartProduct, Review
 from .mixins import CategoryDetailMixin, CartMixin
-from .forms import OrderForm, ReviewForm
+from .forms import OrderForm, ReviewForm, ContactForm
 from .utils import recalc_cart
+
 User = get_user_model()
 
 
@@ -28,7 +31,6 @@ class BaseView(CartMixin, View):
 
 
 class ProductDetailView(CartMixin, CategoryDetailMixin, DetailView):
-
     CT_MODEL_MODEL_CLASS = {
         'shoes': Shoes,
         'outerwear': Outerwear,
@@ -52,26 +54,8 @@ class ProductDetailView(CartMixin, CategoryDetailMixin, DetailView):
         context['cart'] = self.cart
         return context
 
-    def review_product(self, request, *args, **kwargs):
-        ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('slug')
-        content_type = ContentType.objects.get(model=ct_model)
-        product = content_type.model_class().objects.get(slug=product_slug)
-
-        if request.method == "POST":
-            form = ReviewForm(request.POST)
-            if form.is_valid():
-                cf = form.cleaned_data
-                author = User
-                Review.objects.create(product=ct_model, author=author, text=cf['text'], rate=cf['rate'])
-            return redirect('product_detail', slug=product_slug)
-        else:
-            form = ReviewForm()
-
-        return render(request, 'category_detail.html', {'product': product, 'form': form})
-
 
 class CategoryDetailView(CartMixin, CategoryDetailMixin, DetailView):
-
     model = Category
     queryset = Category.objects.all()
     context_object_name = 'category'
@@ -183,3 +167,58 @@ class MakeOrderView(CartMixin, View):
             return HttpResponseRedirect('/')
         return HttpResponseRedirect('/checkout/')
 
+
+def get_shoes_review(request, *args, **kwargs):
+    form = ReviewForm(request.POST or None)
+    context = {
+
+        'form': form
+    }
+    return render(request, 'review.html', context)
+
+
+class MakeReview(View):
+
+    @transaction.atomic
+    def shoes_review_product(self, request, **kwargs):
+        form = ReviewForm(request.POST or None)
+        customer = Customer.objects.get(user=request.user)
+
+        if form.is_valid():
+            new_review = form.save(commit=False)
+            new_review.author = customer
+            new_review.text = form.cleaned_data['text']
+            new_review.rate = form.cleaned_data['rate']
+            new_review.save()
+            customer.reviews.add(new_review)
+            messages.add_message(request, messages.INFO, 'Спасибо за отзыв! Менеджер с Вами свяжется')
+            return HttpResponseRedirect('/product_detail')
+        return HttpResponseRedirect('/base')
+
+
+def homepage(request):
+    return render(request, "base.html")
+
+
+def contact(request):
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            subject = "Пробное сообщение"
+            body = {
+                'Имя': form.cleaned_data['first_name'],
+                'Фамилия': form.cleaned_data['last_name'],
+                'Адрес электронной почти': form.cleaned_data['email_address'],
+                'Сообщение': form.cleaned_data['message'],
+            }
+            message = "\n".join(body.values())
+            try:
+                send_mail(subject, message,
+                          'admin@example.com',
+                          ['admin@example.com'])
+            except BadHeaderError:
+                return HttpResponse('Найден некорректный заголовок')
+            return redirect("base")
+
+    form = ContactForm()
+    return render(request, 'contact.html', {'form': form})

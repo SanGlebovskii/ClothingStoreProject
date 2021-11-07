@@ -18,16 +18,9 @@
         <p>Описание: {{ product.description }}</p>
         <hr>
         <a href="{% url 'add_to_cart' ct_model=ct_model slug=product.slug %}"><button class="btn btn-danger">Добавить в корзину</button></a>
+        <a href="{% url 'review'  %}"><button class="btn btn-danger">Оставить отзыв</button></a>
     </div>
-    <div class="col-md-8">
-     <p class="mt-4">Отзыв:</p>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit">
-</form>
-     </div>
     <p class="mt-4">Характеристики:</p>
 
     {{ product|product_spec }}
@@ -35,6 +28,20 @@
 
 </div>
 
+
+    <div class="col-md-8">
+        <p class="mt-4">Отзыв:</p>
+            <form method="post">
+                {% csrf_token %}
+                <table>
+                    {{ form.author }}
+                    {{ form.rate }}
+                    {{ form.text }}
+                </table>
+                <input type="submit">
+            </form>
+
+     </div>
 
 
 {% endblock content %}
