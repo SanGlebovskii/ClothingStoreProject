@@ -1,0 +1,32 @@
+version: '3.3'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx-django-test
+    ports:
+      - "80:80"
+    volumes:
+      - .:/code
+      - ./nginx/config:/etc/nginx/conf.d/
+    depends_on:
+      - web
+    db:
+      image: sqlite3:latest
+      container_name: django-db-test
+        restart: always
+        ports:
+          - "5432:5432"
+
+        web:
+          build: .
+          container_name: django-backend-test
+          volumes:
+            - .:/code
+
+          ports:
+            - "8000:8000"
+          depends_on:
+            - db
+          links:
+            - db:db

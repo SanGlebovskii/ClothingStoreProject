@@ -24,10 +24,11 @@ class ShoesSpider(scrapy.Spider):
 
     def parse_product(self, response):
         product = response.css('div.main__container')
+        category = Category.objects.get(name='Обувь')
 
         for prod in product:
             pr_item = ShoesSpiderItem()
-            category_id = Shoes.category
+            article = prod.css('span#productNmId::text').get()
             price = prod.css('span.price-block__final-price::text').get()
             title = prod.css('h1.same-part-kt__header > span::text').get()
             descr = prod.css('div.j-description > p::text').get()
@@ -39,7 +40,8 @@ class ShoesSpider(scrapy.Spider):
             else:
                 price = 0
 
-            pr_item['category'] = category_id
+            pr_item['category'] = category
+            pr_item['slug'] = article
             pr_item['title'] = title
             pr_item['price'] = price
             pr_item['description'] = descr
